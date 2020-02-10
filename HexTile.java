@@ -73,19 +73,7 @@ public class HexTile
                 }
             });
             hex.setOnMouseClicked( e -> {
-                if (this.container.level.troopPickedUp == true)
-                {
-                    ((Troop) container.level.heldTroopSource.getContents()).moveToTile(this);
-                    this.draw();
-                    this.container.level.troopPickedUp = false;
-                }
-                
-                if (container.level.currentPlayer == player)
-                {
-                    if (this.getTerritory().size() > 1) {
-                        container.setCurrentTerritory(this.getTerritory());
-                    }
-                }
+                runOnMouseClicked();
             });
         }
 
@@ -145,19 +133,7 @@ public class HexTile
             }
         });
         hex.setOnMouseClicked( e -> {
-            if (this.container.level.troopPickedUp == true)
-            {
-                ((Troop) container.level.heldTroopSource.getContents()).moveToTile(this);
-                this.draw();
-                this.container.level.troopPickedUp = false;
-            }
-            
-            if (container.level.currentPlayer == player)
-            {
-                if (this.getTerritory().size() > 1) {
-                    container.setCurrentTerritory(this.getTerritory());
-                }
-            }
+            runOnMouseClicked();
         });
 
         container.canvas.getChildren().add(this.hex);
@@ -277,5 +253,37 @@ public class HexTile
     public TileContent getContents()
     {
         return contents;
+    }
+    public void runOnMouseClicked()
+    {
+        if (this.container.level.troopPickedUp)
+        {
+            ((Troop) container.level.heldTroopSource.getContents()).moveToTile(this);
+            this.draw();
+            container.level.hideHand();
+            this.container.level.troopPickedUp = false;
+        } else if (this.container.level.troopSpawnedIn)
+        {
+            this.container.currentTerritory.newTroopAtTile(this, 1);
+            container.level.hideHand();
+            this.container.level.troopSpawnedIn = false;
+
+        }
+        if (container.level.currentPlayer == player)
+        {
+            if (this.getTerritory().size() > 1) {
+                container.setCurrentTerritory(this.getTerritory());
+            }
+            if ((this.container.level.castleSpawnedIn) && (contents instanceof EmptyTile))
+            {
+                this.setContents(new Castle(this));
+                this.currentTerritory.money -= 15;
+                container.level.hideHand();
+                container.setCurrentTerritory(this.getTerritory());
+                this.container.level.castleSpawnedIn = false;
+            }
+        }
+        this.draw();
+        
     }
 }

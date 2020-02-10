@@ -9,6 +9,6 @@ public class Gravestone extends TileContent
     }
     public ImageView getImage()
     {
-        return new ImageView("./assets/graveyard.png");
+        return new ImageView("./assets/gravestone.png");
     }
 }

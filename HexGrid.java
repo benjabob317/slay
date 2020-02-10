@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Line;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.Image;
 
 
 public class HexGrid extends ArrayList<ArrayList<HexTile>>
@@ -70,6 +71,20 @@ public class HexGrid extends ArrayList<ArrayList<HexTile>>
             this.canvas.getChildren().add(line);
         }
         level.topBar.money.setText(Integer.toString(territory.money));
+        if (territory.money >= 10)
+        {
+            level.topBar.troopSupply.setOpacity(1);
+        } else {
+            level.topBar.troopSupply.setOpacity(0);
+        }
+
+
+        if (territory.money >= 15)
+        {
+            level.topBar.castleSupply.setOpacity(1);
+        } else {
+            level.topBar.castleSupply.setOpacity(0);
+        }
 
     }
     public void deselectCurrentTerritory()
@@ -142,4 +157,93 @@ public class HexGrid extends ArrayList<ArrayList<HexTile>>
             }
         }
     }
+
+    public void adjustTerritory(Territory territory) // splits up, removes money from, and adds a capital to the territory if necessary
+    {
+        ArrayList<HexTile> tiles = new ArrayList<HexTile>();
+        for (HexTile tile: territory)
+        {
+            tiles.add(tile);
+        }
+        HexTile capitalTile = tiles.get(0);
+        boolean hasCapital = false;
+        for (HexTile tile: tiles)
+        {
+            tile.setTerritory(new Territory(this, tile.getTerritory().getPlayer()));
+            tile.getTerritory().add(tile);
+            if (tile.getContents() instanceof Capital)
+            {
+                hasCapital = true;
+                capitalTile = tile;
+            }
+        }
+
+        for (HexTile tile: tiles)
+        {
+            Territory newTerritory = new Territory(this, tile.getPlayer());
+            ArrayList<Territory> eligibleTerritories = new ArrayList<Territory>();
+            for (HexTile tile2: tile.getNeighbors())
+            {
+                if (tile2.getPlayer() == tile.getPlayer())
+                {
+                    eligibleTerritories.add(tile2.getTerritory());
+                }
+            }
+            for (int i = 0; i < eligibleTerritories.size(); i++)
+            {
+                newTerritory.absorbTerritory(eligibleTerritories.get(i));
+            }
+            newTerritory.addTile(tile);
+        }
+
+        ArrayList<Territory> relevantTerritories = new ArrayList<Territory>();
+
+        for (HexTile tile: tiles)
+        {
+            if (hasCapital)
+            {
+                if (tile == capitalTile)
+                {
+                    tile.setContents(new Capital(tile));
+                    tile.getTerritory().money = territory.money;
+                }
+            }
+            if (!(relevantTerritories.contains(tile.getTerritory())))
+            {
+                relevantTerritories.add(tile.getTerritory());
+            }
+            if (tile.getContents() instanceof Capital)
+            {
+                tile.getTerritory().hasCapital = true;
+            }
+        }
+
+
+        for (Territory terr: relevantTerritories)
+        {
+            if (terr.hasCapital)
+            {
+                if (terr.size() == 1)
+                {
+                    terr.get(0).setContents(new Tree(terr.get(0)));
+                    terr.hasCapital = false;
+                }
+                
+            }
+            if (!(terr.hasCapital))
+            {
+                if (terr.size() > 1)
+                {
+                    terr.generateNewCapital();
+                    capitals.add(terr.getCapital());
+                }
+                terr.money = 0;
+            }
+            territories.add(terr);
+        }
+        territories.remove(territory);
+
+        this.draw();
+    }
+
 }

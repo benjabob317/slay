@@ -132,16 +132,7 @@ public class Territory extends ArrayList<HexTile>
         }
         if (validTiles.size() > 0) // if there are empty tiles
         {
-            int avgXYSUM = (int) validTiles.stream().mapToInt(tile -> tile.getX() + tile.getY()).average().getAsDouble(); // optimal tile is that closest to the center
-            HexTile bestTile = validTiles.get(0);
-            for (HexTile tile: validTiles.subList(1, validTiles.size()))
-            {
-                if (Math.abs((tile.getX() + tile.getY()) - avgXYSUM) < Math.abs((bestTile.getX() + bestTile.getY())  - avgXYSUM))
-                {
-                    bestTile = tile;
-                }
-            }
-            setCapital(bestTile);
+            setBestCapitalTile(validTiles);
         } else
         {
             for (HexTile tile: this)
@@ -154,16 +145,7 @@ public class Territory extends ArrayList<HexTile>
             
             if (validTiles.size() > 0) // if there are treed tiles
             {
-                int avgXYSUM = (int) validTiles.stream().mapToInt(tile -> tile.getX() + tile.getY()).average().getAsDouble(); // optimal tile is that closest to the center
-                HexTile bestTile = validTiles.get(0);
-                for (HexTile tile: validTiles.subList(1, validTiles.size()))
-                {
-                    if (Math.abs((tile.getX() + tile.getY()) - avgXYSUM) < Math.abs((bestTile.getX() + bestTile.getY()) - avgXYSUM))
-                    {
-                        bestTile = tile;
-                    }
-                }
-                setCapital(bestTile);
+                setBestCapitalTile(validTiles);
             } else 
             {
                 for (HexTile tile: this)
@@ -176,21 +158,35 @@ public class Territory extends ArrayList<HexTile>
                 
                 if (validTiles.size() > 0) // if there are castle tiles
                 {
-                    int avgXYSUM = (int) validTiles.stream().mapToInt(tile -> tile.getX() + tile.getY()).average().getAsDouble(); // optimal tile is that closest to the center
-                    HexTile bestTile = validTiles.get(0);
-                    for (HexTile tile: validTiles.subList(1, validTiles.size()))
+                    setBestCapitalTile(validTiles);
+                } else { // there must be only troops ig LOL
+                    for (HexTile tile: this)
                     {
-                        if (Math.abs((tile.getX() + tile.getY()) - avgXYSUM) < Math.abs((bestTile.getX() + bestTile.getY()) - avgXYSUM))
-                        {
-                            bestTile = tile;
-                        }
+                        validTiles.add(tile);
                     }
-                    setCapital(bestTile);
+                    if (validTiles.size() > 0) // if there are castle tiles
+                    {
+                        setBestCapitalTile(validTiles);
+                    }
                 }
             }
 
         }
     }
+    private void setBestCapitalTile(ArrayList<HexTile> usableTiles)
+    {
+        int avgXYSUM = (int) usableTiles.stream().mapToInt(tile -> tile.getX() + tile.getY()).average().getAsDouble(); // optimal tile is that closest to the center
+        HexTile bestTile = usableTiles.get(0);
+        for (HexTile tile: usableTiles.subList(1, usableTiles.size()))
+        {
+            if (Math.abs((tile.getX() + tile.getY()) - avgXYSUM) < Math.abs((bestTile.getX() + bestTile.getY())  - avgXYSUM))
+            {
+                bestTile = tile;
+            }
+        }
+        setCapital(bestTile);
+    }
+
     public ArrayList<HexTile> getHostileTileNeighbors() // returns all hostile tiles adjacent to this territory
     {
         ArrayList<HexTile> neighbors = new ArrayList<HexTile>();
@@ -240,5 +236,42 @@ public class Territory extends ArrayList<HexTile>
     public int getPlayer()
     {
         return player;
+    }
+    public void newTroopAtTile(HexTile tile, int level) // spawning in new troops
+    {
+        if (this.contains(tile))
+        {
+            if ((tile.getContents() instanceof Troop) && (tile.getContents().getProtectionLevel()+level < 5))
+            {
+                tile.getContents().protectionLevel += level;
+                this.money -= 10;
+            }
+            else if (tile.getContents() instanceof Tree)
+            {
+                tile.setContents(new Troop(tile, level, false));
+                this.money -= 10;
+            }
+            else if (tile.getContents() instanceof EmptyTile)
+            {
+                tile.setContents(new Troop(tile, level, true));
+                this.money -= 10;
+            }
+        }
+        else if ((getHostileTileNeighbors().contains(tile)) && (tile.getContents().getProtectionLevel() < level) && !(tile.isWater)) // hostile tile and significantly strong troop
+        {
+            tile.getTerritory().remove(tile);
+            if (tile.getTerritory().size() > 0)
+            {
+                container.adjustTerritory(tile.getTerritory());
+            }
+            tile.setPlayer(player);
+            this.addTile(tile);
+            tile.setContents(new Troop(tile, level, false));
+            this.money -= 10;
+            tile.container.setCurrentTerritory(this);
+            tile.getTerritory().absorbAdjacentFriendlyTerritories();
+        }
+        tile.draw();
+    this.container.level.topBar.adjustPlayerDisplay();
     }
 }

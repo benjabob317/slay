@@ -12,7 +12,7 @@ public class HexTest extends Application
         primary.setTitle("Hexagons!");
         Pane drawingBoard = new Pane();
         
-        Level level = new Level();
+        Level level = new Level(500, 500);
         HexGrid grid = new HexGrid(0, 0, 9, 9, 40, drawingBoard, level);
 
         int[][] level1 = new int[][] {
@@ -27,9 +27,6 @@ public class HexTest extends Application
             {3, 3, 0, 0, 2, 2, 0, 0, 1},
         };
         grid.setPlayers(level1);
-        grid.get(2).get(1).setContents(new Troop(grid.get(2).get(1), 2));
-        grid.get(1).get(7).setContents(new Troop(grid.get(1).get(7), 1));
-        grid.get(3).get(7).setContents(new Troop(grid.get(3).get(7), 1));
 
         grid.initializeTerritories();
         grid.initializeCapitals();
