@@ -12,6 +12,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.Node;
+import javafx.scene.layout.Pane;
+
 
 
 public class Level extends BorderPane
@@ -68,28 +70,62 @@ public class Level extends BorderPane
 
         setCenter(stack);
         stack.getChildren().add(scroll);
-
-        topBar.castleSupply.setOnMouseClicked( e -> {
-            if (this.grid.currentTerritory.money >= 15)
-            {
-                this.castleSpawnedIn = true;
-                stack.getChildren().add(new ImageView("./assets/hand.png"));
-                stack.getChildren().add(new ImageView("./assets/castle.png"));
-            }
-        });
-
-        topBar.troopSupply.setOnMouseClicked( e -> {
-            if (this.grid.currentTerritory.money >= 10)
-            {
-                this.troopSpawnedIn = true;
-                stack.getChildren().add(new ImageView("./assets/hand.png"));
-                stack.getChildren().add(new ImageView("./assets/peasant.png"));
-            }
-        });
-
-
-
     }
+
+    public Level(double levelWidth, double levelHeight, LevelData data) // initialize level from save data
+    {
+        this.topBar = buildTopBar();  
+        topBar.turn = data.turn;
+        setTop(topBar);
+        this.troopPickedUp = false;
+        this.currentPlayer = 1;
+
+        this.stack = new StackPane();
+        stack.setMinHeight(levelHeight);
+        stack.setPrefHeight(levelHeight);
+        stack.setMaxHeight(levelHeight);
+        stack.setMinWidth(levelWidth);
+        stack.setPrefWidth(levelWidth);
+        stack.setMaxWidth(levelWidth);
+        stack.setAlignment(Pos.TOP_CENTER);
+
+        this.scroll = new ScrollPane();
+        scroll.setMinHeight(levelHeight);
+        scroll.setPrefHeight(levelHeight);
+        scroll.setMaxHeight(levelHeight);
+        scroll.setMinWidth(levelWidth);
+        scroll.setPrefWidth(levelWidth);
+        scroll.setMaxWidth(levelWidth);
+
+        
+        setCenter(stack);
+        stack.getChildren().add(scroll);
+
+        this.setGrid(new HexGrid(0, 0, data.playerData.length, data.playerData[0].length, 40, new Pane(), this));
+        grid.setPlayers(data.playerData);
+        this.levelWidth = levelWidth;
+        this.levelHeight = levelHeight;
+        grid.initializeTerritories();
+        grid.initializeCapitals();
+        grid.draw();
+
+        HBox bottomBox = new HBox(10);
+        Button endTurn = new Button("End Turn");
+        endTurn.setOnAction( e -> {
+            switchPlayer();
+        });
+        bottomBox.getChildren().addAll(endTurn);
+        setBottom(bottomBox);
+        
+        newTurn(1);
+        grid.draw();
+        topBar.money.setText("");
+        topBar.adjustPlayerDisplay();
+
+
+    }  
+
+
     public void setGrid(HexGrid grid)
     {
         this.grid = grid;
@@ -120,6 +156,24 @@ public class Level extends BorderPane
             castleSupply.setFitWidth(20);
             castleSupply.setFitHeight(31);
             castleSupply.setOpacity(0);
+
+            castleSupply.setOnMouseClicked( e -> {
+                if (grid.currentTerritory.money >= 15)
+                {
+                    castleSpawnedIn = true;
+                    stack.getChildren().add(new ImageView("./assets/hand.png"));
+                    stack.getChildren().add(new ImageView("./assets/castle.png"));
+                }
+            });
+
+            troopSupply.setOnMouseClicked( e -> {
+                if (grid.currentTerritory.money >= 10)
+                {
+                    troopSpawnedIn = true;
+                    stack.getChildren().add(new ImageView("./assets/hand.png"));
+                    stack.getChildren().add(new ImageView("./assets/peasant.png"));
+                }
+            });
 
 
             VBox itemSupply = new VBox();

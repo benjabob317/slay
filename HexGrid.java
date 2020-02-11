@@ -32,7 +32,7 @@ public class HexGrid extends ArrayList<ArrayList<HexTile>>
         this.territories = new ArrayList<Territory>();
         this.capitals = new ArrayList<HexTile>();
         this.level = level;
-        level.setGrid(this);
+        //level.setGrid(this);
 
         canvas.setPrefSize(hexSize*2*.75*(width+(1.0/3.0)), hexSize*Math.sqrt(3)*(height+0.5));
         canvas.setMinSize(hexSize*2*.75*(width+(1.0/3.0)), hexSize*Math.sqrt(3)*(height+0.5));
