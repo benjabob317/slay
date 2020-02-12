@@ -86,13 +86,35 @@ public class HexGrid extends ArrayList<ArrayList<HexTile>>
             level.topBar.troopSupply.setOpacity(0);
         }
 
-
         if (territory.money >= 15)
         {
             level.topBar.castleSupply.setOpacity(1);
         } else {
             level.topBar.castleSupply.setOpacity(0);
         }
+
+        int revenue = 0;
+        int costs = 0;
+        for (HexTile tile: territory)
+        {
+            if (!((tile.getContents() instanceof Tree) || (tile.getContents() instanceof Gravestone)))
+            {
+                revenue++;
+            }
+            if (tile.getContents() instanceof Troop)
+            {
+                costs += 2*((int) Math.pow(3, tile.getContents().protectionLevel-1));
+            }
+        }
+        if ((revenue - costs) <= 0)
+        {
+            level.topBar.profit.setText(Integer.toString(revenue) + " - " + Integer.toString(costs) + " = " + Integer.toString(revenue - costs));
+        }
+        else 
+        {
+            level.topBar.profit.setText(Integer.toString(revenue) + " - " + Integer.toString(costs) + " = +" + Integer.toString(revenue - costs));
+        }
+
 
     }
     public void deselectCurrentTerritory()

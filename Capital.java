@@ -12,7 +12,7 @@ public class Capital extends TileContent
     public ImageView getImage()
     {
         ImageView iv = new ImageView("./assets/capital.png");
-        if (tile.getTerritory().money >= 10)
+        if ((tile.getTerritory().money >= 10) && (tile.getPlayer() == tile.container.level.currentPlayer))
         {
             iv = new ImageView("./assets/flag_capital.gif");
         }

@@ -325,6 +325,13 @@ public class HexTile
                     container.level.hideHand();
                     container.setCurrentTerritory(this.getTerritory());
                     this.container.level.castleSpawnedIn = false;
+                    for (HexTile hexTile: container.currentTerritory)
+                    {
+                        if (hexTile.getContents() instanceof Capital)
+                        {
+                            hexTile.draw(); // updates flags
+                        }
+                    }
                 }
 
             }

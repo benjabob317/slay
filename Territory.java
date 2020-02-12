@@ -277,8 +277,12 @@ public class Territory extends ArrayList<HexTile>
             tile.getTerritory().absorbAdjacentFriendlyTerritories();
             unHighlightConquerableTiles();
         }
-        tile.draw();
-    this.container.level.topBar.adjustPlayerDisplay();
+        for (HexTile hexTile: this)
+        {
+            hexTile.draw();
+        }
+        this.container.level.topBar.adjustPlayerDisplay();
+        this.container.level.topBar.adjustLevelPreview();
     }
     public void highlightConquerableTiles(int level)
     {
@@ -302,4 +306,5 @@ public class Territory extends ArrayList<HexTile>
             tile.draw();
         }
     }
+
 }

@@ -76,9 +76,7 @@ public class Level extends BorderPane
 
     public Level(double levelWidth, double levelHeight, LevelData data, Stage primary, Scene mainMenu) // initialize level from save data
     {
-        this.topBar = buildTopBar();  
-        topBar.turn = data.turn;
-        setTop(topBar);
+
         this.troopPickedUp = false;
         this.currentPlayer = 1;
 
@@ -125,16 +123,25 @@ public class Level extends BorderPane
         zoomOut.setOnAction( e -> {
             grid.hexSize *= .9;
             grid.draw();
+            grid.canvas.setPrefSize(grid.hexSize*2*.75*(grid.width+(1.0/3.0)), grid.hexSize*Math.sqrt(3)*(grid.height+0.5));
+            grid.canvas.setMinSize(grid.hexSize*2*.75*(grid.width+(1.0/3.0)), grid.hexSize*Math.sqrt(3)*(grid.height+0.5));
+            grid.canvas.setMaxSize(grid.hexSize*2*.75*(grid.width+(1.0/3.0)), grid.hexSize*Math.sqrt(3)*(grid.height+0.5));
         });
         Button zoomIn = new Button("Zoom in");
         zoomIn.setOnAction( e -> {
             grid.hexSize *= (10.0/9.0);
             grid.draw();
+            grid.canvas.setPrefSize(grid.hexSize*2*.75*(grid.width+(1.0/3.0)), grid.hexSize*Math.sqrt(3)*(grid.height+0.5));
+            grid.canvas.setMinSize(grid.hexSize*2*.75*(grid.width+(1.0/3.0)), grid.hexSize*Math.sqrt(3)*(grid.height+0.5));
+            grid.canvas.setMaxSize(grid.hexSize*2*.75*(grid.width+(1.0/3.0)), grid.hexSize*Math.sqrt(3)*(grid.height+0.5));
         });
 
         bottomBox.getChildren().addAll(endTurn, returnToMenu, zoomOut, zoomIn);
         setBottom(bottomBox);
         
+        this.topBar = buildTopBar();  
+        topBar.turn = data.turn;
+        setTop(topBar);
         newTurn(1);
         grid.draw();
         topBar.money.setText("");
@@ -158,13 +165,21 @@ public class Level extends BorderPane
         public int turn;
         public ImageView troopSupply;
         public ImageView castleSupply;
+        public LevelPreview preview;
+        public Level level;
+        public VBox itemSupply;
+        public VBox playerDisplayHolder;
+        public Text profit;
+
         
-        public TopBar()
+        public TopBar(Level level)
         {
             this.money = new Text();
             this.setAlignment(Pos.CENTER);
             this.setSpacing(10);
             this.turn = 1;
+            this.level = level;
+            this.profit = new Text();
 
             troopSupply = new ImageView("./assets/peasant.png");
             castleSupply = new ImageView("./assets/castle.png");
@@ -195,13 +210,13 @@ public class Level extends BorderPane
             });
 
 
-            VBox itemSupply = new VBox();
+            this.itemSupply = new VBox();
             itemSupply.setAlignment(Pos.CENTER);
             HBox newItems = new HBox();
             newItems.getChildren().addAll(troopSupply, castleSupply);
-            itemSupply.getChildren().addAll(newItems, money);
+            itemSupply.getChildren().addAll(profit, newItems, money);
 
-            VBox playerDisplayHolder = new VBox();
+            this.playerDisplayHolder = new VBox();
             playerDisplayHolder.setAlignment(Pos.CENTER);
             
             this.playerDisplay = new HBox();
@@ -209,7 +224,10 @@ public class Level extends BorderPane
             playerDisplay.getChildren().addAll((new Rectangle(40, 20, Color.web("0x94CF8A"))), (new Rectangle(40, 20, Color.web("0xDCCA98"))), (new Rectangle(40, 20, Color.web("0x016E1E"))), (new Rectangle(40, 20, Color.web("0xE6E174"))), (new Rectangle(40, 20, Color.web("0x56A319"))), (new Rectangle(40, 20, Color.web("0x786319")))); 
             ((Rectangle) playerDisplay.getChildren().get(0)).setStroke(new Color(0, 0, 0, 1));
             ((Rectangle) playerDisplay.getChildren().get(0)).setStrokeWidth(1);
-            this.getChildren().addAll(playerDisplayHolder, itemSupply);
+
+            this.preview = new LevelPreview(getTileArray(), 50);
+
+            this.getChildren().addAll(preview, playerDisplayHolder, itemSupply);
             this.setPadding(new Insets(0, 0, 10, 0));
         }
         public void adjustPlayerDisplay() // adjusts the width of the player bars
@@ -219,6 +237,24 @@ public class Level extends BorderPane
             {
                 ((Rectangle) playerDisplay.getChildren().get(i)).setWidth(200.0*tilesOwnedBy(i+1)/totalPlayerTiles);
             }
+        }
+        public int[][] getTileArray()
+        {
+            int[][] array = new int[level.grid.size()][level.grid.get(0).size()];
+            for (int x = 0; x < level.grid.size(); x++)
+            {
+                for (int y = 0; y < level.grid.get(0).size(); y++)
+                {
+                    array[x][y] = level.grid.get(x).get(y).getPlayer();
+                }
+            }
+            return array;
+        }
+        public void adjustLevelPreview()
+        {
+            this.getChildren().clear();
+            this.preview = new LevelPreview(getTileArray(), 50);
+            this.getChildren().addAll(this.preview, this.playerDisplayHolder, this.itemSupply);
         }
 
     } 
@@ -252,6 +288,7 @@ public class Level extends BorderPane
                         grid.territories.get(i).get(n).draw();
                     }  
                 }
+                grid.territories.get(i).unHighlightConquerableTiles();
             }
         }
 
@@ -261,13 +298,14 @@ public class Level extends BorderPane
         if (currentPlayer > 6)
         {
             topBar.turn += 1;
-            ((Text) ((VBox) topBar.getChildren().get(0)).getChildren().get(1)).setText("Turn " + Integer.toString(topBar.turn));
+            ((Text) ((VBox) topBar.getChildren().get(1)).getChildren().get(1)).setText("Turn " + Integer.toString(topBar.turn));
             currentPlayer = 1;
         }
         ((Rectangle) topBar.playerDisplay.getChildren().get(currentPlayer-1)).setStroke(new Color(0, 0, 0, 1));
         ((Rectangle) topBar.playerDisplay.getChildren().get(currentPlayer-1)).setStrokeWidth(1);
         grid.deselectCurrentTerritory();
         topBar.money.setText("");
+        topBar.profit.setText("");
         newTurn(currentPlayer);
     }
     public void newTurn(int player) // updates all territories of player for a new turn
@@ -298,6 +336,13 @@ public class Level extends BorderPane
                     grid.territories.get(i).get(n).draw();
                 }
             }
+            for (int n = 0; n < grid.territories.get(i).size(); n++)
+            {
+                if (grid.territories.get(i).get(n).getContents() instanceof Capital)
+                {
+                    grid.territories.get(i).get(n).draw(); // updates flags
+                }
+            }
             if (grid.territories.get(i).money < 0)
             {
                 for (int n = 0; n < grid.territories.get(i).size(); n++)
@@ -320,11 +365,12 @@ public class Level extends BorderPane
         if (tilesOwnedBy(player) == 0)
         {
             switchPlayer();
-        } 
+        }
+
     }
     private TopBar buildTopBar()
     {
-        return new TopBar();
+        return new TopBar(this);
     }
     public void hideHand()
     {
