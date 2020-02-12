@@ -71,10 +71,12 @@ public class Troop extends TileContent
                 tile.container.currentTerritory.newTroopAtTile(tile, 1);
                 tile.container.level.hideHand();
                 tile.container.level.troopSpawnedIn = false;
+                tile.container.setCurrentTerritory(tile.container.currentTerritory);
 
             }
             else if (this.moves > 0)
             {
+                tile.getTerritory().highlightConquerableTiles(protectionLevel);
                 tile.container.level.troopPickedUp = true;
                 tile.container.level.heldTroopSource = tile;
                 tile.container.level.stack.getChildren().add(new ImageView("./assets/hand.png"));
@@ -101,6 +103,7 @@ public class Troop extends TileContent
     }
     public void moveToTile(HexTile newTile) // moves troop to new tile
     {
+        this.tile.draw();
         if ((newTile.getPlayer() == this.tile.getPlayer()) && (newTile != this.tile) && (newTile.getTerritory() == this.tile.getTerritory())) // if a friendly tile
         {
 
@@ -111,6 +114,7 @@ public class Troop extends TileContent
                 this.tile.setContents(new EmptyTile(this.tile));
                 this.tile.draw(); // clears old tile
                 this.tile.container.level.hideHand();
+                this.tile.getTerritory().unHighlightConquerableTiles();
             }
             else if (newTile.getContents() instanceof Tree) //if the tile has a tree
             {
@@ -122,6 +126,7 @@ public class Troop extends TileContent
                 newTile.draw();
                 moves = 0;
                 this.tile.container.level.hideHand();
+                this.tile.getTerritory().unHighlightConquerableTiles();
             }
             else if (newTile.getContents() instanceof EmptyTile) // if the tile is empty
             {
@@ -132,6 +137,7 @@ public class Troop extends TileContent
                 newTile.setContents(this);
                 newTile.draw();
                 this.tile.container.level.hideHand();
+                newTile.getTerritory().unHighlightConquerableTiles();
             }
         }
         else if ((newTile.isWater == false) && (newTile.getProtectionLevel() < this.protectionLevel) && (this.tile.getTerritory().getHostileTileNeighbors().contains(newTile))) // if a hostile land tile and the troop is strong enough
@@ -162,8 +168,10 @@ public class Troop extends TileContent
             moves = 0;
             this.tile.container.level.hideHand();
             newTile.container.level.topBar.adjustPlayerDisplay();
+            newTile.getTerritory().unHighlightConquerableTiles();
 
         }
+
     }
     public void rechargeMove()
     {

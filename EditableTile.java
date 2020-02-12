@@ -79,6 +79,7 @@ public class EditableTile
         contentImage.setX(container.topLeftX + container.hexSize*(.65 + 1.5*x));
         contentImage.setY(container.topLeftY + container.hexSize*Math.sqrt(3)*(.5 + y + .5*(x%2)) - container.hexSize*0.4);
 
+        
         container.canvas.getChildren().remove(hex);
 
         double centerX = container.topLeftX + container.hexSize*(1 + 1.5*x);

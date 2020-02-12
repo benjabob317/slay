@@ -13,6 +13,8 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.Node;
 import javafx.scene.layout.Pane;
+import javafx.stage.Stage;
+import javafx.scene.Scene;
 
 
 
@@ -72,7 +74,7 @@ public class Level extends BorderPane
         stack.getChildren().add(scroll);
     }
 
-    public Level(double levelWidth, double levelHeight, LevelData data) // initialize level from save data
+    public Level(double levelWidth, double levelHeight, LevelData data, Stage primary, Scene mainMenu) // initialize level from save data
     {
         this.topBar = buildTopBar();  
         topBar.turn = data.turn;
@@ -103,6 +105,7 @@ public class Level extends BorderPane
 
         this.setGrid(new HexGrid(0, 0, data.playerData.length, data.playerData[0].length, 40, new Pane(), this));
         grid.setPlayers(data.playerData);
+        grid.setTrees(data.treeData);
         this.levelWidth = levelWidth;
         this.levelHeight = levelHeight;
         grid.initializeTerritories();
@@ -114,7 +117,22 @@ public class Level extends BorderPane
         endTurn.setOnAction( e -> {
             switchPlayer();
         });
-        bottomBox.getChildren().addAll(endTurn);
+        Button returnToMenu = new Button("Return to main menu");
+        returnToMenu.setOnAction( e -> {
+            primary.setScene(mainMenu);
+        });
+        Button zoomOut = new Button("Zoom out");
+        zoomOut.setOnAction( e -> {
+            grid.hexSize *= .9;
+            grid.draw();
+        });
+        Button zoomIn = new Button("Zoom in");
+        zoomIn.setOnAction( e -> {
+            grid.hexSize *= (10.0/9.0);
+            grid.draw();
+        });
+
+        bottomBox.getChildren().addAll(endTurn, returnToMenu, zoomOut, zoomIn);
         setBottom(bottomBox);
         
         newTurn(1);
@@ -172,6 +190,7 @@ public class Level extends BorderPane
                     troopSpawnedIn = true;
                     stack.getChildren().add(new ImageView("./assets/hand.png"));
                     stack.getChildren().add(new ImageView("./assets/peasant.png"));
+                    grid.currentTerritory.highlightConquerableTiles(1);
                 }
             });
 
@@ -298,6 +317,10 @@ public class Level extends BorderPane
                 grid.territories.get(i).get(0).draw();
             }
         }
+        if (tilesOwnedBy(player) == 0)
+        {
+            switchPlayer();
+        } 
     }
     private TopBar buildTopBar()
     {

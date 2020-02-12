@@ -25,6 +25,8 @@ import java.lang.ClassNotFoundException;
 import java.io.File;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.scene.Scene;
+import javafx.scene.layout.Pane;
 
 
 public class LevelEditor extends BorderPane
@@ -36,11 +38,12 @@ public class LevelEditor extends BorderPane
     public ScrollPane scroll;
     public double levelWidth;
     public double levelHeight;
+    private Scene mainMenu;
 
-    public LevelEditor(double levelWidth, double levelHeight, Stage primary)
+    public LevelEditor(double levelWidth, double levelHeight, Stage primary, Scene mainMenu)
     {
         this.topBar = new TopBar();
-
+        this.mainMenu = mainMenu;
         VBox topRow = new VBox();
         topRow.getChildren().addAll(buildMenus(primary), topBar);
         setTop(topRow);
@@ -82,6 +85,9 @@ public class LevelEditor extends BorderPane
         
         bottomBar.getChildren().addAll(boxOne, addRightColumn);
         setBottom(bottomBar);
+
+        setGrid(new EditableGrid(0, 0, 30, 30, 40, new Pane(), this));
+        this.grid.draw();
 
 
     }
@@ -275,7 +281,6 @@ public class LevelEditor extends BorderPane
         grid.canvas.setMaxSize(grid.hexSize*2*.75*(grid.size()+(1.0/3.0)), grid.hexSize*Math.sqrt(3)*(grid.get(0).size()+0.5));
         grid.draw();
     }
-
     public void saveLevel(Stage primary)
     {
         try
@@ -288,15 +293,25 @@ public class LevelEditor extends BorderPane
                 ObjectOutputStream oos = new ObjectOutputStream(fos);
                 
                 int[][] playerData = new int[grid.size()][grid.get(0).size()];
+                ArrayList<int[]> treeData = new ArrayList<int[]>();
+                ArrayList<int[]> capitalData = new ArrayList<int[]>();
                 for (int x = 0; x < grid.size(); x++)
                 {
                     for (int y = 0; y < grid.get(x).size(); y++)
                     {
                         playerData[x][y] = grid.get(x).get(y).player;
+                        if (grid.get(x).get(y).hasTree)
+                        {
+                            int[] tree = new int[3];
+                            tree[0] = x;
+                            tree[1] = y;
+                            tree[2] = 0;
+                            treeData.add(tree);
+                        }
                     }
                 }
 
-                oos.writeObject(new LevelData(playerData));
+                oos.writeObject(new LevelData(playerData, treeData, capitalData));
                 oos.close();
             }
         }
@@ -309,16 +324,53 @@ public class LevelEditor extends BorderPane
             ex.printStackTrace();
         }
     } 
+    public void openLevel(Stage primary)
+    {
+        try
+        {
+
+            FileChooser fc = new FileChooser();
+            fc.setTitle("Open a File");
+            File selected = fc.showOpenDialog(primary);
+            if (selected != null)
+            {
+                FileInputStream fis = new FileInputStream(selected);
+                ObjectInputStream ois = new ObjectInputStream(fis);
+                LevelData data = (LevelData) ois.readObject();
+                ois.close();
+                setGrid(new EditableGrid(0, 0, 30, data, new Pane(), this));
+                this.grid.draw();
+
+            }
+        }
+        catch(FileNotFoundException ex)
+        {
+            ex.printStackTrace();
+        }
+        catch(IOException ex)
+        {
+            ex.printStackTrace();
+        }
+        catch(ClassNotFoundException ex)
+        {
+            ex.printStackTrace();
+        }
+    }
 
     public MenuBar buildMenus(Stage primary)
     {
         MenuBar mbar = new MenuBar();
-        mbar.getMenus().addAll(buildOpenMenu(), buildSaveMenu(primary), returnToMenu());
+        mbar.getMenus().addAll(buildOpenMenu(primary), buildSaveMenu(primary), returnToMenu(primary));
         return mbar;
     }
-    public Menu buildOpenMenu()
+    public Menu buildOpenMenu(Stage primary)
     {
         Menu openMenu = new Menu("Open");
+        MenuItem openMenuItem = new MenuItem("Open Level");
+        openMenuItem.setOnAction( e -> {
+            openLevel(primary);
+        });
+        openMenu.getItems().addAll(openMenuItem);
         return openMenu;
     }
     public Menu buildSaveMenu(Stage primary)
@@ -333,9 +385,14 @@ public class LevelEditor extends BorderPane
         saveMenu.getItems().addAll(saveMenuItem);
         return saveMenu;
     }
-    public Menu returnToMenu()
+    public Menu returnToMenu(Stage primary)
     {
-        Menu returnMenu = new Menu("Return to Menu");
+        Menu returnMenu = new Menu("Exit");
+        MenuItem returnMenuItem = new MenuItem("Return to Menu");
+        returnMenuItem.setOnAction( e ->{
+            primary.setScene(mainMenu);
+        });
+        returnMenu.getItems().add(returnMenuItem);
         return returnMenu;
     }
 }

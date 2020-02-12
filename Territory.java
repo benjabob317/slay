@@ -9,12 +9,14 @@ public class Territory extends ArrayList<HexTile>
     public int money;
     private HexTile capital;
     public boolean hasCapital;
+    private ArrayList<HexTile> highlightedTiles;
     public Territory(HexGrid container, int player)
     {
         this.container = container;
         this.player = player;
         this.money = 0;
         this.hasCapital = false;
+        this.highlightedTiles = new ArrayList<HexTile>();
     }
     private boolean closeEnough(double[] m, double[] n) // compares if 2 segments are the same
     {
@@ -245,16 +247,19 @@ public class Territory extends ArrayList<HexTile>
             {
                 tile.getContents().protectionLevel += level;
                 this.money -= 10;
+                unHighlightConquerableTiles();
             }
             else if (tile.getContents() instanceof Tree)
             {
                 tile.setContents(new Troop(tile, level, false));
                 this.money -= 10;
+                unHighlightConquerableTiles();
             }
             else if (tile.getContents() instanceof EmptyTile)
             {
                 tile.setContents(new Troop(tile, level, true));
                 this.money -= 10;
+                unHighlightConquerableTiles();
             }
         }
         else if ((getHostileTileNeighbors().contains(tile)) && (tile.getContents().getProtectionLevel() < level) && !(tile.isWater)) // hostile tile and significantly strong troop
@@ -270,8 +275,31 @@ public class Territory extends ArrayList<HexTile>
             this.money -= 10;
             tile.container.setCurrentTerritory(this);
             tile.getTerritory().absorbAdjacentFriendlyTerritories();
+            unHighlightConquerableTiles();
         }
         tile.draw();
     this.container.level.topBar.adjustPlayerDisplay();
+    }
+    public void highlightConquerableTiles(int level)
+    {
+        for (HexTile tile: getHostileTileNeighbors())
+        {
+            if (!(tile.isWater) && (tile.getProtectionLevel() < level))
+            {
+                tile.draw();
+                tile.hex.setStroke(Color.RED);
+                tile.hex.setStrokeWidth(2);
+                highlightedTiles.add(tile);
+            }
+        }
+    }
+    public void unHighlightConquerableTiles()
+    {
+        for (HexTile tile: highlightedTiles)
+        {
+            tile.hex.setStroke(Color.BLACK);
+            tile.hex.setStrokeWidth(1);
+            tile.draw();
+        }
     }
 }

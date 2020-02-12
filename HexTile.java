@@ -115,10 +115,45 @@ public class HexTile
     }
     public void draw()
     {
+
+        container.canvas.getChildren().remove(this.hex);
+
+        double centerX = container.topLeftX + container.hexSize*(1 + 1.5*x);
+        double centerY = container.topLeftY + container.hexSize*Math.sqrt(3)*(.5 + y + .5*(x%2));
+        
+        Color color = Color.color(0, 0, 1);
+
+        if (player == 1) {
+            color = Color.web("0x94CF8A");
+        } else if (player == 2) {
+            color = Color.web("0xDCCA98");
+        } else if (player == 3) {
+            color = Color.web("0x016E1E");
+        } else if (player == 4) {
+            color = Color.web("0xE6E174");
+        } else if (player == 5) {
+            color = Color.web("0x56A319");
+        } else if (player == 6) {
+            color = Color.web("0x786319");
+        }
+
+        this.hex = new Hexagon(centerX, centerY, container.hexSize, color, Color.BLACK);
+
+        container.canvas.getChildren().remove(contentImage);
         contentImage = getContents().getImage();
         contentImage.setX(container.topLeftX + container.hexSize*(.65 + 1.5*getX()));
         contentImage.setY(container.topLeftY + container.hexSize*Math.sqrt(3)*(.5 + getY() + .5*(getX()%2)) - container.hexSize*0.4);
-        container.canvas.getChildren().remove(this.hex);
+        
+        if ((getContents() instanceof Capital) || (getContents() instanceof Castle) || (getContents() instanceof Troop) || (getContents() instanceof Tree) || (getContents() instanceof Gravestone)) // scales content widths
+        {
+            contentImage.setFitWidth(contentImage.getImage().getWidth()*container.hexSize/40);
+            contentImage.setFitHeight(contentImage.getImage().getHeight()*container.hexSize/40);
+        }
+        if ((getContents() instanceof Troop) || (getContents() instanceof Tree))
+        {
+            contentImage.setFitHeight(contentImage.getFitHeight() * 1.5);
+            contentImage.setFitWidth(contentImage.getFitWidth() * 1.5);
+        }
 
         hex.setOnMouseEntered( e -> {
             if (container.level.currentPlayer == player)
@@ -262,25 +297,42 @@ public class HexTile
             this.draw();
             container.level.hideHand();
             this.container.level.troopPickedUp = false;
-        } else if (this.container.level.troopSpawnedIn)
+        } else if (this.container.level.troopSpawnedIn) 
         {
-            this.container.currentTerritory.newTroopAtTile(this, 1);
-            container.level.hideHand();
-            this.container.level.troopSpawnedIn = false;
+            if (container.currentTerritory.contains(this))
+            {
+                this.container.currentTerritory.newTroopAtTile(this, 1);
+                container.level.hideHand();
+                this.container.level.troopSpawnedIn = false;
+                this.container.setCurrentTerritory(this.container.currentTerritory);
+            }
+            else if ((container.currentTerritory.getHostileTileNeighbors().contains(this)) && (this.getProtectionLevel() == 0))
+            {
+                this.container.currentTerritory.newTroopAtTile(this, 1);
+                container.level.hideHand();
+                this.container.level.troopSpawnedIn = false;
+            }
 
         }
         if (container.level.currentPlayer == player)
         {
-            if (this.getTerritory().size() > 1) {
-                container.setCurrentTerritory(this.getTerritory());
-            }
             if ((this.container.level.castleSpawnedIn) && (contents instanceof EmptyTile))
             {
-                this.setContents(new Castle(this));
-                this.currentTerritory.money -= 15;
-                container.level.hideHand();
-                container.setCurrentTerritory(this.getTerritory());
-                this.container.level.castleSpawnedIn = false;
+                if ((container.currentTerritory.contains(this)))
+                {
+                    this.setContents(new Castle(this));
+                    this.currentTerritory.money -= 15;
+                    container.level.hideHand();
+                    container.setCurrentTerritory(this.getTerritory());
+                    this.container.level.castleSpawnedIn = false;
+                }
+
+            }
+            else if (this.getTerritory().size() > 1) {
+                if (!((this.getTerritory() != container.currentTerritory) && container.level.troopSpawnedIn))
+                {
+                    container.setCurrentTerritory(this.getTerritory());
+                }
             }
         }
         this.draw();

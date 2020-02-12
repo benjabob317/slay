@@ -58,6 +58,14 @@ public class HexGrid extends ArrayList<ArrayList<HexTile>>
             }
         }
     }
+    public void setTrees(ArrayList<int[]> data)
+    {
+        for (int[] tree: data)
+        {
+            this.get(tree[0]).get(tree[1]).setContents(new Tree(this.get(tree[0]).get(tree[1])));
+            this.get(tree[0]).get(tree[1]).draw();
+        }
+    }
     public void setCurrentTerritory(Territory territory) // selects the current territory
     {
         currentTerritory = territory;
@@ -99,6 +107,8 @@ public class HexGrid extends ArrayList<ArrayList<HexTile>>
     {
         for (ArrayList<HexTile> column: this) {
             for (HexTile tile: column) {
+                canvas.getChildren().remove(tile.hex);
+                canvas.getChildren().remove(tile.contentImage);
                 tile.draw();
             }
         }
